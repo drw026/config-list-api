@@ -7,15 +7,16 @@ type TestType = {
     type: string
     testSegments: number[]
     referenceSegments: number[]
-    activateOnUpload: boolean
     startDate: number | null
     endDate: number | null
     status: string
 }
 
-const tests: TestType[] = [];
+let tests: TestType[] = [];
 
-const sleep = (seconds: number) => new Promise(resolve => setTimeout(resolve, (seconds * 1000)));
+interface DeleteParams {
+    id: string
+}
 
 const testsRoute: FastifyPluginAsync = async (fastify): Promise<void> => {
     fastify.get('/', async function (request, reply) {
@@ -25,6 +26,8 @@ const testsRoute: FastifyPluginAsync = async (fastify): Promise<void> => {
                     title: test.title,
                     type: test.type,
                     status: test.status,
+                    testSegments: test.testSegments,
+                    referenceSegments: test.referenceSegments,
                     startDate: test.startDate,
                     endDate: test.endDate,
                 }
@@ -32,31 +35,21 @@ const testsRoute: FastifyPluginAsync = async (fastify): Promise<void> => {
         )
     });
 
-    fastify.post<{ Body: TestType }>('/', async function (request, reply) {
-        const {
-            title,
-            type,
-            testSegments,
-            referenceSegments,
-            activateOnUpload
-        } = request.body
+    fastify.post<{ Body: string }>('/', async function (request, reply) {
+        const test = JSON.parse(request.body);
 
         const newTest: TestType = {
             id: nanoid(),
-            title,
-            type,
-            testSegments,
-            referenceSegments,
-            activateOnUpload,
+            title: test.title,
+            type: test.type,
+            testSegments: test.testSegments,
+            referenceSegments: test.referenceSegments,
             startDate: null,
             endDate: null,
-            status: activateOnUpload ? 'Active' : 'In progress'
+            status: test.activateOnUpload ? 'Active' : 'Ready for activation'
         }
 
-        // wait 0, 1, 2, 3 seconds
-        await sleep(Math.floor(Math.random() * 3));
-
-        newTest.startDate = Date.now();
+        if (test.activateOnUpload) newTest.startDate = Date.now();
 
         tests.push(newTest);
 
@@ -64,6 +57,13 @@ const testsRoute: FastifyPluginAsync = async (fastify): Promise<void> => {
 
         return newTest;
     })
+
+    fastify.delete<{ Params: DeleteParams }>('/:id', async function (request, reply) {
+        const id = request.params.id;
+
+        tests = tests.filter(test => test.id !== id)
+        return { msg: `Test with ID ${id} is deleted` }
+    });
 }
 
 export default testsRoute;
