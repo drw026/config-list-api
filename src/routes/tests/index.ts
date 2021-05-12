@@ -18,6 +18,10 @@ interface DeleteParams {
     id: string
 }
 
+interface PatchParams {
+    id: string
+}
+
 const testsRoute: FastifyPluginAsync = async (fastify): Promise<void> => {
     fastify.get('/', async function (request, reply) {
         reply.status(200).send(tests.map((test) => {
@@ -64,6 +68,26 @@ const testsRoute: FastifyPluginAsync = async (fastify): Promise<void> => {
         tests = tests.filter(test => test.id !== id)
         return { msg: `Test with ID ${id} is deleted` }
     });
+
+    fastify.patch<{ Params: PatchParams, Body: string }>('/:id/status', async function(request, reply) {
+        const id = request.params.id;
+        const requestBody = JSON.parse(request.body);
+
+        if (requestBody === 1) {
+            tests = tests.map(test =>
+                test.id === id ? { ...test, status: 'Active', startDate: Date.now() } : test
+            )
+        }
+
+        if (requestBody === 2) {
+            tests = tests.map(test =>
+                test.id === id ? { ...test, status: 'Ended', endDate: Date.now() } : test
+            )
+        }
+
+        return { msg: `Test with ID ${id} is changed` };
+    });
+
 }
 
 export default testsRoute;
