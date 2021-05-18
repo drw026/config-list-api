@@ -7,6 +7,7 @@ type TestType = {
     type: string
     testSegments: number[]
     referenceSegments: number[]
+    creationDate: number | null
     startDate: number | null
     endDate: number | null
     status: string
@@ -31,6 +32,7 @@ const testsRoute: FastifyPluginAsync = async (fastify): Promise<void> => {
                     type: test.type,
                     status: test.status,
                     testSegments: test.testSegments,
+                    creationDate: test.creationDate,
                     referenceSegments: test.referenceSegments,
                     startDate: test.startDate,
                     endDate: test.endDate,
@@ -48,12 +50,11 @@ const testsRoute: FastifyPluginAsync = async (fastify): Promise<void> => {
             type: test.type,
             testSegments: test.testSegments,
             referenceSegments: test.referenceSegments,
-            startDate: null,
+            creationDate: Date.now(),
+            startDate: test.activateOnUpload ? Date.now() : null,
             endDate: null,
-            status: test.activateOnUpload ? 'Active' : 'Ready for activation'
+            status: test.activateOnUpload ? 'Active' : 'Ready'
         }
-
-        if (test.activateOnUpload) newTest.startDate = Date.now();
 
         tests.push(newTest);
 
